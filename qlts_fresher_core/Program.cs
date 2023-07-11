@@ -6,6 +6,7 @@ using Misa.Qlts.Solution.DL.Context;
 using Misa.Qlts.Solution.DL.Contracts;
 using Misa.Qlts.Solution.DL.Repositories;
 using Misa.Qlts.Solution.Controller.Middleware;
+using Misa.Qlts.Solution.BL.AuthService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,9 @@ builder.Services.AddScoped<IFixedAssetCategoryRepository, FixedAssetCategoryRepo
 
 builder.Services.AddScoped<IFixedAssetService, FixedAssetService>();
 builder.Services.AddScoped<IFixedAssetRepository, FixedAssetRepository>();
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
 // add cors
 builder.Services.AddCors(options =>
@@ -62,7 +66,7 @@ app.UseCors();
 app.MapControllers();
 
 // use custom middleware
-app.UseMiddleware<ValidateHandlingMiddleware>();
-app.UseMiddleware<GlobalHandlingMiddleware>();
+//app.UseMiddleware<ValidateHandlingMiddleware>();
+//app.UseMiddleware<GlobalHandlingMiddleware>();
 
 app.Run();

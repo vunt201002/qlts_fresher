@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Mvc;
 using Misa.Qlts.Solution.BL.DepartmentService;
 using Misa.Qlts.Solution.BL.DepartmentService.DepartmentDtos;
 using Misa.Qlts.Solution.Controller.Base;
