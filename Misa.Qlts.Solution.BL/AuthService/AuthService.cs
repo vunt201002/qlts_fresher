@@ -80,7 +80,8 @@ namespace Misa.Qlts.Solution.BL.AuthService
         {
             List<Claim> claims = new()
             {
-                new Claim(ClaimTypes.Email, user.email)
+                new Claim(ClaimTypes.Email, user.email),
+                new Claim(ClaimTypes.Role, "Admin"),
             };
 
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(

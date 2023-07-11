@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Misa.Qlts.Solution.BL.AuthService;
 using Misa.Qlts.Solution.BL.AuthService.AuthDtos;
 using Misa.Qlts.Solution.Controller.Base;
@@ -27,6 +29,14 @@ namespace Misa.Qlts.Solution.Controller.Controllers
             var res = await _authService.Login(authDto);
 
             return Ok(res);
+        }
+
+        [HttpGet("test"), Authorize(Roles = "Admin")]
+        public string? TestController()
+        {
+            // get user role
+            var rs = User.FindFirstValue(ClaimTypes.Email);
+            return rs;
         }
     }
 }
