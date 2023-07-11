@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Misa.Qlts.Solution.BL.AuthService;
 using Misa.Qlts.Solution.BL.AuthService.AuthDtos;
+using Misa.Qlts.Solution.Common.CommonEntities;
 using Misa.Qlts.Solution.Controller.Base;
 
 namespace Misa.Qlts.Solution.Controller.Controllers
@@ -26,7 +27,19 @@ namespace Misa.Qlts.Solution.Controller.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(AuthDto authDto)
         {
+            // login
             var res = await _authService.Login(authDto);
+
+            // tạo refresh token
+            RefreshToken refreshToken = _authService.GetRefreshToken();
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = refreshToken.Expires,
+            };
+
+            Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
 
             return Ok(res);
         }

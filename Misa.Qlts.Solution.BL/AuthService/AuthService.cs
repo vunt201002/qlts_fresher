@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Security.Cryptography;
 using AutoMapper;
 using Misa.Qlts.Solution.BL.AuthService.AuthDtos;
 using Misa.Qlts.Solution.BL.Base;
 using Misa.Qlts.Solution.DL.Contracts;
 using Misa.Qlts.Solution.DL.Entities;
 using Misa.Qlts.Solution.Common.Exceptions;
-using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Configuration;
 using System.IdentityModel.Tokens.Jwt;
+using Misa.Qlts.Solution.Common.CommonEntities;
+using Microsoft.AspNetCore.Http;
 
 namespace Misa.Qlts.Solution.BL.AuthService
 {
@@ -76,6 +71,13 @@ namespace Misa.Qlts.Solution.BL.AuthService
             }
         }
 
+
+        /// <summary>
+        /// hàm tạo accessToken
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns>string</returns>
+        /// created by: ntvu (11/07/2023)
         private static string CreateToken(User user)
         {
             List<Claim> claims = new()
@@ -99,6 +101,37 @@ namespace Misa.Qlts.Solution.BL.AuthService
 
             return jwt;
         }
+
+
+        /// <summary>
+        /// hàm tạo refresh token,
+        /// chỉ dùng trong service
+        /// </summary>
+        /// <returns>RefreshToken</returns>
+        /// created by: ntvu (11/07/2023)
+        private RefreshToken GenerateRefreshToken()
+        {
+            var refreshToken = new RefreshToken()
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Created = DateTime.Now,
+                Expires = DateTime.Now.AddDays(7)
+            };
+
+            return refreshToken;
+        }
+
+        /// <summary>
+        /// hàm get refresh token,
+        /// để bên ngoài lấy token
+        /// </summary>
+        /// <returns>RefreshToken</returns>
+        /// created by: ntvu (11/07/2023)
+        public RefreshToken GetRefreshToken()
+        {
+            return GenerateRefreshToken();
+        }
+
 
 
         /// <summary>
@@ -176,6 +209,7 @@ namespace Misa.Qlts.Solution.BL.AuthService
                 throw new BadRequestException("Sai mật khẩu");
             }
 
+            // tạo access token
             var token = CreateToken(emailExist);
 
             return token;
