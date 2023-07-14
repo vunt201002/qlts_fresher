@@ -10,6 +10,8 @@ using Misa.Qlts.Solution.DL.Base;
 using Misa.Qlts.Solution.DL.Context;
 using Misa.Qlts.Solution.DL.Contracts;
 using Misa.Qlts.Solution.DL.Entities;
+using Misa.Qlts.Solution.Common.CommonEntities;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace Misa.Qlts.Solution.DL.Repositories
 {
@@ -46,6 +48,82 @@ namespace Misa.Qlts.Solution.DL.Repositories
                 );
 
                 return userDoc;
+            }
+        }
+
+        /// <summary>
+        /// hàm cập nhật otp
+        /// </summary>
+        /// <param name="email"></param>
+        /// <param name="otp"></param>
+        /// <returns>Task<int></returns>
+        /// created by: ntvu (13/07/2023)
+        public async Task<int> UpdateOtp(string email, OTP otp)
+        {
+            var procedureName = "sp_update_user_otp";
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add("email", email);
+            parameters.Add("otp", otp.otp);
+            parameters.Add("otp_expiry_time", otp.otp_expiry_time);
+
+            using (var connection = _context.CreateConnection())
+            {
+                int res = await connection.ExecuteAsync(
+                    procedureName,
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                return res;
+            }
+        }
+
+        /// <summary>
+        /// hàm verify otp
+        /// </summary>
+        /// <param name="otp"></param>
+        /// <returns>Task<OTP></returns>
+        /// created by: ntvu (13/07/2023)
+        public async Task<User> VerifyOtp(OTP otp)
+        {
+            var procedureName = "sp_verify_otp";
+
+            using (var connection = _context.CreateConnection())
+            {
+                var res = await connection.QueryFirstOrDefaultAsync<User>(
+                    procedureName,
+                    otp,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                return res;
+            }
+        }
+
+        /// <summary>
+        /// hàm verify người dùng
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns>Task<int></returns>
+        /// created by: ntvu (13/07/2023)
+        public async Task<int> VerifyUser(string email)
+        {
+            var procedureName = "sp_verify_user";
+
+            var dynamicParam = new DynamicParameters();
+            dynamicParam.Add("email", email);
+
+            using (var connection = _context.CreateConnection())
+            {
+                int res = await connection.ExecuteAsync(
+                    procedureName,
+                    dynamicParam,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                return res;
             }
         }
 

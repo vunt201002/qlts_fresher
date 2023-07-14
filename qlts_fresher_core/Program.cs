@@ -12,6 +12,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
+using Misa.Qlts.Solution.BL.MailService;
+using Misa.Qlts.Solution.Common.CommonEntities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +33,10 @@ builder.Services.AddScoped<IFixedAssetRepository, FixedAssetRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+
+builder.Services.AddTransient<IMailService, MailService>();
+
+builder.Services.Configure<EmailSetting>(builder.Configuration.GetSection("EmailSettings"));
 
 // add authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

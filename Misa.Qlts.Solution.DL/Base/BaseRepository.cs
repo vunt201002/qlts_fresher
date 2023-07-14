@@ -164,7 +164,7 @@ namespace Misa.Qlts.Solution.DL.Base
 
                 return res;
             }
-        } 
+        }
         #endregion
     }
 }

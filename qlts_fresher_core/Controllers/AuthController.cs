@@ -5,6 +5,7 @@ using Misa.Qlts.Solution.BL.AuthService;
 using Misa.Qlts.Solution.BL.AuthService.AuthDtos;
 using Misa.Qlts.Solution.Common.CommonEntities;
 using Misa.Qlts.Solution.Controller.Base;
+using Misa.Qlts.Solution.DL.Contracts;
 
 namespace Misa.Qlts.Solution.Controller.Controllers
 {
@@ -42,6 +43,28 @@ namespace Misa.Qlts.Solution.Controller.Controllers
             Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
 
             return Ok(res);
+        }
+
+        [HttpPost("otp")]
+        public async Task<IActionResult> GetOTP(string email)
+        {
+            var otp = await _authService.GetOTP(email);
+
+            return Ok(otp);
+        }
+
+        /// <summary>
+        /// hàm verify otp
+        /// </summary>
+        /// <param name="otp"></param>
+        /// <returns>Task<IActionResult></returns>
+        /// created by: ntvu (13/07/2023)
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOtp(OTP otp)
+        {
+            var user = await _authService.VerifyOtp(otp);
+
+            return Ok(user);
         }
 
         [HttpGet("test"), Authorize(Roles = "Admin")]

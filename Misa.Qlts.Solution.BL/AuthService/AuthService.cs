@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Misa.Qlts.Solution.Common.CommonEntities;
 using Microsoft.AspNetCore.Http;
+using Misa.Qlts.Solution.BL.MailService;
 
 namespace Misa.Qlts.Solution.BL.AuthService
 {
@@ -20,13 +21,16 @@ namespace Misa.Qlts.Solution.BL.AuthService
     public class AuthService : BaseService<User, AuthDto, AuthCreateDto, AuthUpdateDto>, IAuthService
     {
         private readonly IAuthRepository _authRepository;
+        private readonly IMailService _mailService;
 
         public AuthService(
             IAuthRepository authRepository,
-            IMapper mapper
+            IMapper mapper,
+            IMailService mailService
         ) : base(authRepository, mapper)
         {
             _authRepository = authRepository;
+            _mailService = mailService;
         }
 
         /// <summary>
@@ -109,7 +113,7 @@ namespace Misa.Qlts.Solution.BL.AuthService
         /// </summary>
         /// <returns>RefreshToken</returns>
         /// created by: ntvu (11/07/2023)
-        private RefreshToken GenerateRefreshToken()
+        private static RefreshToken GenerateRefreshToken()
         {
             var refreshToken = new RefreshToken()
             {
@@ -132,7 +136,66 @@ namespace Misa.Qlts.Solution.BL.AuthService
             return GenerateRefreshToken();
         }
 
+        /// <summary>
+        /// hàm tạo otp
+        /// </summary>
+        /// <returns>string</returns>
+        /// created by: ntvu (13/07/2023)
+        private static OTP GenerateOtp()
+        {
+            Random random = new Random();
+            int otpNumber = random.Next(100000, 999999);
 
+            // tạo otp
+            string otpString = otpNumber.ToString();
+            // thời gian hết hạn (10 phút)
+            DateTime expirationTime = DateTime.Now.AddMinutes(10);
+
+            OTP oTP = new OTP(otpString, expirationTime);
+
+            return oTP;
+        }
+
+        /// <summary>
+        /// lấy otp
+        /// </summary>
+        /// <returns>OTP</returns>
+        /// created by: ntvu (13/07/2023)
+        public async Task<OTP> GetOTP(string email)
+        {
+            // get new otp
+            var newOtp = GenerateOtp();
+
+            // save otp to db
+            await _authRepository.UpdateOtp(email, newOtp);
+
+            return newOtp;
+        }
+
+        /// <summary>
+        /// hàm verify otp
+        /// </summary>
+        /// <param name="otp"></param>
+        /// <returns>Task<User></returns>
+        /// created by: ntvu (13/07/2023)
+        public async Task<User> VerifyOtp(OTP otp)
+        {
+            var user = await _authRepository.VerifyOtp(otp);
+
+            // nếu user null, verify lỗi
+            if (user == null)
+            {
+                throw new BadRequestException("Lỗi khi verify otp");
+            }
+            // nếu có user, verify thành công
+            // update trạng thái user
+            else
+            {
+                await _authRepository.VerifyUser(user.email);
+            }
+
+            return user;
+        }
 
         /// <summary>
         /// hàm đăng ký người dùng,
@@ -180,6 +243,22 @@ namespace Misa.Qlts.Solution.BL.AuthService
                 throw new BadRequestException();
             }
 
+            // nếu tạo thành công thì tạo otp
+            OTP otp = GenerateOtp();
+
+            // gửi mail cho người dùng
+            EmailRequest otpMail = new()
+            {
+                ToEmail = authCreateDto.email,
+                Subject = "Xác thực tài khoản",
+                Body = $"Otp của bạn là: { otp.otp }"
+            };
+
+            _mailService.SendEmailAsync(otpMail);
+
+            // lưu otp
+            await _authRepository.UpdateOtp(authCreateDto.email, otp);
+            
             return res;
         }
 
@@ -215,5 +294,53 @@ namespace Misa.Qlts.Solution.BL.AuthService
             return token;
         }
 
+
+        /// <summary>
+        /// hàm override từ base repo
+        /// thay đổi mật khẩu
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <param name="authUpdateDto"></param>
+        /// <returns>Task<int></returns>
+        /// <exception cref="BadRequestException"></exception>
+        /// created by: ntvu (13/07/2023)
+        public override async Task<int> UpdateAsync(Guid Id, AuthUpdateDto authUpdateDto)
+        {
+            // hash password mới
+            CreateHashPassword(
+                authUpdateDto.password,
+                out byte[] passwordHash,
+                out byte[] passwordSalt
+            );
+
+            // tạo user mới với mật khẩu mới
+            User newUser = new()
+            {
+                email = authUpdateDto.email,
+                password_salt = passwordSalt,
+                password_hash = passwordHash,
+            };
+
+            // gửi link reset qua email
+            EmailRequest otpMail = new()
+            {
+                ToEmail = authUpdateDto.email,
+                Subject = "Đổi mật khẩu",
+                Body = $"Link đổi mật khẩu: http://localhost:44327/api/auth/reset-password"
+            };
+
+            _mailService.SendEmailAsync(otpMail);
+
+
+            // Chuyển dữ liệu cho DL để cập nhật
+            int res = await _authRepository.UpdateAsync(Id, newUser);
+
+            if (res != 1)
+            {
+                throw new BadRequestException("Lỗi khi đổi mật khẩu");
+            }
+
+            return res;
+        }
     }
 }
